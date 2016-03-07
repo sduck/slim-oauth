@@ -9,22 +9,26 @@ use OAuth\ServiceFactory;
  * Factory for creating OAuth services
  */
 class OAuthFactory {
-    private $storageClass      = '\OAuth\Common\Storage\Session';
+    const DEFAULT_STORAGE = '\OAuth\Common\Storage\Session';
+
     private $registeredService = false;
     private $serviceFactory;
     private $storage;
-    private $oAuthCredentials;
+    private $oAuthConfig;
 
     /**
      * Create new OAuthFactory
      *
      * @param mixed $config  An array of oauth key/secrets
      */
-    public function __construct($oAuthCredentials)
+    public function __construct($oAuthConfig)
     {
-        $this->serviceFactory   = new ServiceFactory;
-        $this->storage          = new $this->storageClass();
-        $this->oAuthCredentials = $oAuthCredentials;
+        $this->serviceFactory = new ServiceFactory;
+        if (!isset($oAuthConfig['storage']) || !class_exists($oAuthConfig['storage'])) {
+            $oAuthConfig['storage'] = self::DEFAULT_STORAGE;
+        }
+        $this->storage = new $oAuthConfig['storage']();
+        $this->oAuthConfig = $oAuthConfig;
     }
 
     /**
@@ -36,7 +40,7 @@ class OAuthFactory {
     {
         $typeLower = strtolower($type);
 
-        if (!array_key_exists($typeLower, $this->oAuthCredentials)) {
+        if (!array_key_exists($typeLower, $this->oAuthConfig)) {
             return false;
         }
 
@@ -47,8 +51,8 @@ class OAuthFactory {
 
         // Setup the credentials for the requests
         $credentials = new Credentials(
-            $this->oAuthCredentials[$typeLower]['key'],
-            $this->oAuthCredentials[$typeLower]['secret'],
+            $this->oAuthConfig[$typeLower]['key'],
+            $this->oAuthConfig[$typeLower]['secret'],
             $currentUri->getAbsoluteUri() . '/callback'
         );
 
