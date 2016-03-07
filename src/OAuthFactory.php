@@ -3,6 +3,7 @@ namespace SlimApi\OAuth;
 
 use OAuth\Common\Consumer\Credentials;
 use OAuth\Common\Http\Uri\UriFactory;
+use OAuth\OAuth2\Service\ServiceInterface;
 use OAuth\ServiceFactory;
 
 /**
@@ -35,8 +36,10 @@ class OAuthFactory {
      * Create an oauth service based on type
      *
      * @param  string $type the type of oauth services to create
+     *
+     * @return ServiceInterface
      */
-    public function createService($type, $scopes = ['user'])
+    public function createService($type)
     {
         $typeLower = strtolower($type);
 
@@ -56,6 +59,11 @@ class OAuthFactory {
             $currentUri->getAbsoluteUri() . '/callback'
         );
 
+        $scopes = [];
+        if (isset($this->oAuthConfig[$typeLower]['scopes'])) {
+            $scopes = $this->oAuthConfig[$typeLower]['scopes'];
+        }
+
         // Instantiate the OAuth service using the credentials, http client and storage mechanism for the token
         $this->registeredService = $this->serviceFactory->createService($type, $credentials, $this->storage, $scopes);
     }
@@ -63,9 +71,9 @@ class OAuthFactory {
     /**
      * if we don't have a registered service we attempt to make one
      *
-     * @param  string       $type the oauth provider type
+     * @param  string $type the oauth provider type
      *
-     * @return OAuthService       the created service
+     * @return ServiceInterface       the created service
      */
     public function getOrCreateByType($type)
     {
@@ -79,7 +87,7 @@ class OAuthFactory {
     /**
      * retrieve the registered service
      *
-     * @return OAuthService the registered oauth service
+     * @return ServiceInterface the registered oauth service
      */
     public function getService()
     {

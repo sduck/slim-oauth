@@ -2,7 +2,7 @@
 namespace SlimApi\OAuth;
 
 use Exception;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface as RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 /**
