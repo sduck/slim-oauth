@@ -9,26 +9,36 @@ use OAuth\ServiceFactory;
 /**
  * Factory for creating OAuth services
  */
-class OAuthFactory {
+class OAuthFactory
+{
+    const RETURN_URL_STORAGE_SESSION = 'session';
+    const RETURN_URL_STORAGE_COOKIE = 'cookie';
     const DEFAULT_STORAGE = '\OAuth\Common\Storage\Session';
 
     private $registeredService = false;
     private $serviceFactory;
     private $storage;
     private $oAuthConfig;
+    private $returnUrlStorage = self::RETURN_URL_STORAGE_SESSION;
 
     /**
      * Create new OAuthFactory
      *
-     * @param mixed $config  An array of oauth key/secrets
+     * @param mixed $config An array of oauth key/secrets
      */
     public function __construct($oAuthConfig)
     {
         $this->serviceFactory = new ServiceFactory;
+
         if (!isset($oAuthConfig['storage']) || !class_exists($oAuthConfig['storage'])) {
             $oAuthConfig['storage'] = self::DEFAULT_STORAGE;
         }
         $this->storage = new $oAuthConfig['storage']();
+
+        if (isset($oAuthConfig['return_url_storage'])) {
+            $this->returnUrlStorage = $oAuthConfig['return_url_storage'];
+        }
+
         $this->oAuthConfig = $oAuthConfig;
     }
 
@@ -77,7 +87,7 @@ class OAuthFactory {
      */
     public function getOrCreateByType($type)
     {
-        if (! $this->registeredService) {
+        if (!$this->registeredService) {
             $this->createService($type);
         }
 
@@ -92,5 +102,29 @@ class OAuthFactory {
     public function getService()
     {
         return $this->registeredService;
+    }
+
+    /**
+     * @param string $url The url to save
+     */
+    public function setReturnUrl($url)
+    {
+        if (self::RETURN_URL_STORAGE_COOKIE === $this->returnUrlStorage) {
+            setcookie('oauth_return_url', $url, time() + 10 * 60);
+        } else {
+            $_SESSION['oauth_return_url'] = $url;
+        }
+    }
+
+    /**
+     * @return string
+     */
+    public function getReturnUrl()
+    {
+        if (self::RETURN_URL_STORAGE_COOKIE === $this->returnUrlStorage) {
+            return $_COOKIE['oauth_return_url'];
+        } else {
+            return $_SESSION['oauth_return_url'];
+        }
     }
 }

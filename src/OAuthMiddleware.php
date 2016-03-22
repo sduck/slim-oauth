@@ -93,7 +93,7 @@ class OAuthMiddleware
                 throw new Exception("Invalid return url");
             }
 
-            $_SESSION['oauth_return_url'] = $query['return'];
+            $this->oAuthFactory->setReturnUrl($query['return']);
 
             $url = $this->oAuthFactory->getOrCreateByType($matches['oAuthServiceType'])->getAuthorizationUri();
 
@@ -109,7 +109,7 @@ class OAuthMiddleware
             // validates and creates the user entry in the db if not already exists
             $user = $this->userService->createUser($service, $token);
             // set our token in the header and then redirect to the client's chosen url
-            return $response->withStatus(200)->withHeader('Authorization', 'token '.$user->token)->withHeader('Location', $_SESSION['oauth_return_url']);
+            return $response->withStatus(200)->withHeader('Authorization', 'token '.$user->token)->withHeader('Location', $this->oAuthFactory->getReturnUrl());
         }
 
         return false;
