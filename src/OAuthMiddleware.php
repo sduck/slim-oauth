@@ -105,9 +105,9 @@ class OAuthMiddleware
 
             $service = $this->oAuthFactory->getOrCreateByType($matches['oAuthServiceType']);
             // turn our code into a token that's stored internally
-            $service->requestAccessToken($request->getParam('code'));
+            $token = $service->requestAccessToken($request->getParam('code'));
             // validates and creates the user entry in the db if not already exists
-            $user = $this->userService->createUser($service);
+            $user = $this->userService->createUser($service, $token);
             // set our token in the header and then redirect to the client's chosen url
             return $response->withStatus(200)->withHeader('Authorization', 'token '.$user->token)->withHeader('Location', $_SESSION['oauth_return_url']);
         }

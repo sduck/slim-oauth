@@ -2,6 +2,7 @@
 namespace SlimApi\OAuth;
 
 use OAuth\Common\Service\ServiceInterface;
+use OAuth\Common\Token\TokenInterface;
 
 interface UserServiceInterface {
     /**
@@ -60,8 +61,9 @@ interface UserServiceInterface {
      * }
      *
      * @param ServiceInterface $service oauth service
+     * @param TokenInterface   $token   oauth token
      */
-    public function createUser(ServiceInterface $service);
+    public function createUser(ServiceInterface $service, TokenInterface $token);
 
     /**
      * Create a user object, whether it's blank or filled,
