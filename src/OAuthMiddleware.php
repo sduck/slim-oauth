@@ -13,6 +13,7 @@ class OAuthMiddleware
     private $oAuthProviders;
     private $oAuthFactory;
     private $userService;
+    private $config;
 
     private static $authRoute     = '/auth/(?<oAuthServiceType>\w+)';
     private static $callbackRoute = '/auth/(?<oAuthServiceType>\w+)/callback';
@@ -27,6 +28,7 @@ class OAuthMiddleware
         $this->oAuthFactory   = $oAuthFactory;
         $this->userService    = $userService;
         $this->oAuthProviders = $oAuthProviders;
+        $this->config         = $oAuthFactory->getConfig();
     }
 
     /**
@@ -93,7 +95,7 @@ class OAuthMiddleware
                 throw new Exception("Invalid return url");
             }
 
-            $this->oAuthFactory->setReturnUrl($query['return']);
+            $this->setReturnUrl($query['return']);
 
             $url = $this->oAuthFactory->getOrCreateByType($matches['oAuthServiceType'])->getAuthorizationUri();
 
@@ -108,8 +110,21 @@ class OAuthMiddleware
             $token = $service->requestAccessToken($request->getParam('code'));
             // validates and creates the user entry in the db if not already exists
             $user = $this->userService->createUser($service, $token);
+
             // set our token in the header and then redirect to the client's chosen url
-            return $response->withStatus(200)->withHeader('Authorization', 'token '.$user->token)->withHeader('Location', $this->oAuthFactory->getReturnUrl());
+            $returnUrl = $this->getReturnUrl();
+            if (isset($this->config['token_cookie'])) {
+                setcookie($this->config['token_cookie'], $user->token, time() + 60 * 60, '/');
+            } else if (isset($this->config['token_urlparam'])) {
+                if (strpos($returnUrl, '?') === false) {
+                    $returnUrl += '?';
+                } else {
+                    $returnUrl += '&';
+                }
+                $returnUrl += sprintf('%s=%s', $this->config['token_urlparam'], $user->token);
+            }
+
+            return $response->withStatus(200)->withHeader('Authorization', 'token '.$user->token)->withHeader('Location', $returnUrl);
         }
 
         return false;
@@ -169,4 +184,40 @@ class OAuthMiddleware
     {
         return $this->regexRoute(static::$callbackRoute);
     }
+
+
+    /**
+     * @param string $url The url to save
+     */
+    public function setReturnUrl($url)
+    {
+        $returnUrlStorage = OAuthFactory::RETURN_URL_STORAGE_SESSION;
+        if (isset($this->config['return_url_storage'])) {
+            $returnUrlStorage = $this->config['return_url_storage'];
+        }
+
+        if (OAuthFactory::RETURN_URL_STORAGE_COOKIE === $returnUrlStorage) {
+            setcookie('oauth_return_url', $url, time() + 10 * 60, '/');
+        } else {
+            $_SESSION['oauth_return_url'] = $url;
+        }
+    }
+
+    /**
+     * @return string
+     */
+    private function getReturnUrl()
+    {
+        $returnUrlStorage = OAuthFactory::RETURN_URL_STORAGE_SESSION;
+        if (isset($this->config['return_url_storage'])) {
+            $returnUrlStorage = $this->config['return_url_storage'];
+        }
+
+        if (OAuthFactory::RETURN_URL_STORAGE_COOKIE === $returnUrlStorage) {
+            return $_COOKIE['oauth_return_url'];
+        } else {
+            return $_SESSION['oauth_return_url'];
+        }
+    }
+
 }

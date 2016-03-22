@@ -19,7 +19,6 @@ class OAuthFactory
     private $serviceFactory;
     private $storage;
     private $oAuthConfig;
-    private $returnUrlStorage = self::RETURN_URL_STORAGE_SESSION;
 
     /**
      * Create new OAuthFactory
@@ -34,10 +33,6 @@ class OAuthFactory
             $oAuthConfig['storage'] = self::DEFAULT_STORAGE;
         }
         $this->storage = new $oAuthConfig['storage']();
-
-        if (isset($oAuthConfig['return_url_storage'])) {
-            $this->returnUrlStorage = $oAuthConfig['return_url_storage'];
-        }
 
         $this->oAuthConfig = $oAuthConfig;
     }
@@ -102,29 +97,5 @@ class OAuthFactory
     public function getService()
     {
         return $this->registeredService;
-    }
-
-    /**
-     * @param string $url The url to save
-     */
-    public function setReturnUrl($url)
-    {
-        if (self::RETURN_URL_STORAGE_COOKIE === $this->returnUrlStorage) {
-            setcookie('oauth_return_url', $url, time() + 10 * 60);
-        } else {
-            $_SESSION['oauth_return_url'] = $url;
-        }
-    }
-
-    /**
-     * @return string
-     */
-    public function getReturnUrl()
-    {
-        if (self::RETURN_URL_STORAGE_COOKIE === $this->returnUrlStorage) {
-            return $_COOKIE['oauth_return_url'];
-        } else {
-            return $_SESSION['oauth_return_url'];
-        }
     }
 }
