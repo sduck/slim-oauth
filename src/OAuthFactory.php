@@ -98,4 +98,14 @@ class OAuthFactory
     {
         return $this->registeredService;
     }
+
+    /**
+     * retrieve the current config
+     *
+     * @return array
+     */
+    public function getConfig()
+    {
+        return $this->oAuthConfig;
+    }
 }

@@ -114,7 +114,11 @@ class OAuthMiddleware
             // set our token in the header and then redirect to the client's chosen url
             $returnUrl = $this->getReturnUrl();
             if (isset($this->config['token_cookie'])) {
-                setcookie($this->config['token_cookie'], $user->token, time() + 60 * 60, '/');
+                $expire = 60 * 60;
+                if (isset($this->config['token_cookie_ttl']) && is_numeric($this->config['token_cookie_ttl'])) {
+                    $expire = $this->config['token_cookie_ttl'];
+                }
+                setcookie($this->config['token_cookie'], $user->token, time() + $expire, '/');
             } else if (isset($this->config['token_urlparam'])) {
                 if (strpos($returnUrl, '?') === false) {
                     $returnUrl += '?';
