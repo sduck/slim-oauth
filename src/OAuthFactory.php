@@ -2,7 +2,9 @@
 namespace SlimApi\OAuth;
 
 use OAuth\Common\Consumer\Credentials;
+use OAuth\Common\Http\Uri\Uri;
 use OAuth\Common\Http\Uri\UriFactory;
+use OAuth\Common\Http\Uri\UriInterface;
 use OAuth\OAuth2\Service\ServiceInterface;
 use OAuth\ServiceFactory;
 
@@ -69,8 +71,21 @@ class OAuthFactory
             $scopes = $this->oAuthConfig[$typeLower]['scopes'];
         }
 
+        $baseUri = null;
+        if (isset($this->oAuthConfig[$typeLower]['base_uri'])) {
+            if ($this->oAuthConfig[$typeLower]['base_uri'] instanceof UriInterface) {
+                $baseUri = $this->oAuthConfig[$typeLower]['base_uri'];
+            } else {
+                $baseUri = new Uri($this->oAuthConfig[$typeLower]['base_uri']);
+            }
+        }
+
         // Instantiate the OAuth service using the credentials, http client and storage mechanism for the token
-        $this->registeredService = $this->serviceFactory->createService($type, $credentials, $this->storage, $scopes);
+        $this->registeredService = $this->serviceFactory->createService($type,
+                                                                        $credentials,
+                                                                        $this->storage,
+                                                                        $scopes,
+                                                                        $baseUri);
     }
 
     /**
